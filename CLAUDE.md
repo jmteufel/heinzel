@@ -242,39 +242,6 @@ Flag if missing. On macOS, a disabled Application
 Firewall is common and less critical — see
 `rules/macos.md`.
 
-## Housekeeping
-
-Routine health inspections. Only when the user asks.
-
-1. Read `rules/housekeeping.md` (baseline checks).
-2. Read `memory/housekeeping.md` (custom checks) if
-   it exists.
-3. Read server `memory.md` for service-specific
-   checks.
-4. Run all applicable checks.
-5. Present report per `rules/housekeeping.md` format.
-6. Update `memory.md` if facts changed.
-7. Log summary to system journal and
-   local `changelog.log`.
-
-## Security Audit
-
-Only when the user asks.
-
-1. Read `rules/security.md`.
-2. Read server `memory.md` for context.
-3. Run all applicable checks.
-4. Present report per `rules/security.md` format.
-5. Log summary to system journal and
-   local `changelog.log`.
-
-## Programming Language Runtimes
-
-Use [mise](https://mise.jdx.dev) — see
-`rules/mise.md`. Do not install runtimes from
-distro repos or use other version managers unless
-the user requests it.
-
 ## Firewall Awareness for Service Changes
 
 When installing, removing, or configuring a

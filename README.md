@@ -310,30 +310,6 @@ keeps a to-do list in
 for each step. On reconnection it shows what's still
 pending and asks whether to continue or start fresh.
 
-### Housekeeping checks
-
-Run routine health inspections on any server:
-
-```
- ❯ Run housekeeping on bremen1.wintermeyer.de
-```
-
-Heinzel checks disk, memory, load, pending updates,
-firewall, SSL certificates, failed services, and
-server-specific services. Problems are highlighted
-at the top of a concise report.
-
-### Security audit
-
-Check security configuration on any server:
-
-```
- ❯ Run a security audit on app.example.com
-```
-
-Heinzel checks SSH password authentication settings,
-firewall status, and reports issues by severity.
-
 ### Plan mode (Claude Code)
 
 For complex or unfamiliar tasks, switch to plan mode
@@ -370,6 +346,54 @@ This works on both Linux and macOS:
  ❯ Check if the firewall is configured on
    this machine
 ```
+
+## Skills
+
+Skills are bundled workflows that Heinzel loads on
+demand. Each skill runs its own data-collection
+scripts and produces a structured report. Skills
+marked **manual** will not run automatically — you
+must invoke them explicitly.
+
+### `/housekeeping` — manual
+
+Routine health inspection for any server.
+
+```
+ ❯ /housekeeping
+```
+
+Checks disk, memory, load, pending updates,
+firewall, SSL certificates, failed services, and
+server-specific services. Problems are highlighted
+at the top of a concise report.
+
+### `/security-audit` — manual
+
+Security configuration audit for any server.
+
+```
+ ❯ /security-audit
+```
+
+Checks SSH hardening, firewall policy, listening
+services, kernel security settings, SUID binaries,
+and more — reporting findings by severity.
+
+### `/mise` — manual
+
+Install a language runtime on a server.
+
+```
+ ❯ /mise
+```
+
+Detects any existing mise installation, installs it
+if needed (standalone by default — no root required),
+configures PATH for non-interactive SSH shells, then
+installs the requested runtime. Supports Node.js,
+Ruby, Python, Elixir, Go, Java, and anything else
+mise provides.
 
 ## Supported AI Tools
 
@@ -777,6 +801,10 @@ bin/
   hooks/
     check-updates.sh   — Auto-check for repo updates and
                          auto-migrate on session start
+  skills/              — On-demand workflows (invoked manually)
+    housekeeping/      — Routine server health inspection
+    security-audit/    — Security configuration audit
+    mise/              — Language runtime installation
 rules/                 — Upstream rule files (git-tracked)
   debian.md            — Debian & Ubuntu rules
   rhel.md              — RHEL, CentOS, Fedora, Rocky,
@@ -790,9 +818,6 @@ rules/                 — Upstream rule files (git-tracked)
   os-replacement.md    — OS wipe-and-replace workflow
   partition-staging.md — Swap reclaim & hot-migrate for
                          repartitioning
-  housekeeping.md      — Routine server inspection checklist
-  security.md          — Security audit checks
-  mise.md              — Language runtime manager (mise)
   privilege-escalation.md — Sudo, root SSH, unprivileged mode
   os-detection.md      — OS detection procedure
   ssh-user.md          — SSH username & language management
