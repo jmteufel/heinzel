@@ -15,8 +15,9 @@ description: >
   and BootNext for safe first-boot testing.
 - `/cloud-image` skill — if installing via cloud
   image (VM, ARM64, or user preference).
-- `rules/<family>.md` — for the new OS family
-  (e.g. `debian.md`, `freebsd.md`).
+- The family skill (`/debian`, `/freebsd`, etc.)
+  — for the new OS. Auto-loads when OS is
+  detected; invoke manually if not yet loaded.
 - `rules/partition-staging.md` — when freeing
   partitions for staging via hot-migration or
   swap reclaim.

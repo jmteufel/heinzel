@@ -19,21 +19,22 @@ its OS.
      echo "${ID}|${VERSION_ID}|${PRETTY_NAME}"
    ```
    Distro families: `debian`, `rhel`, `suse`.
-   Read `rules/<family>.md`. Gather hardware info
+   Load the family skill (`/debian`, `/rhel`,
+   `/suse`). Gather hardware info
    (`lscpu`, `free -h`, `df -h`).
 
 3. **If macOS** — detect version and arch:
    ```
    sw_vers -productVersion && uname -m
    ```
-   Read `rules/macos.md`. Gather hardware info
+   Load the `/macos` skill. Gather hardware info
    (`sysctl` for CPU/RAM, `df -h`).
 
 4. **If FreeBSD** — detect version and arch:
    ```
    freebsd-version && uname -m
    ```
-   Read `rules/freebsd.md`. Gather hardware info
+   Load the `/freebsd` skill. Gather hardware info
    (`sysctl` for CPU/RAM, `df -h`,
    `zpool status` if ZFS).
 
@@ -45,6 +46,6 @@ its OS.
 2. Check for `todo.md`.
 3. Run the activity check
    (see `rules/activity-check.md`).
-4. Read the matching rule file.
+4. Load the matching family skill.
 5. Verify OS version is still current. Update memory
    if changed.

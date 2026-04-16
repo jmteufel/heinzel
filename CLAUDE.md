@@ -97,7 +97,7 @@ remote connection before any other work.
   asks, explain the risk and refuse. Offer
   alternatives (e.g. restricting to specific IPs).
 - **Verify the default incoming policy is
-  deny/drop.** See `rules/<family>.md`.
+  deny/drop.**
 - **Use the appropriate non-interactive package
   manager** for the detected OS (`apt-get`,
   `dnf`, `yum`, `zypper`, `pkg`, `brew` — never
@@ -143,8 +143,6 @@ Before running any command on a server, verify it:
 3. **Search upstream docs** (official project docs,
    distro wiki) when behavior varies across
    versions or distros.
-4. **Check the rule file** — use the exact syntax
-   from the loaded `rules/<family>.md` file.
 
 ## Rule Overrides
 
@@ -237,10 +235,9 @@ verification, and removal procedures.
 ## Expected Software
 
 Every Linux server should have a firewall and
-automatic security updates. See `rules/<family>.md`.
-Flag if missing. On macOS, a disabled Application
-Firewall is common and less critical — see
-`rules/macos.md`.
+automatic security updates. Flag if missing. On
+macOS, a disabled Application Firewall is common
+and less critical.
 
 ## Firewall Awareness for Service Changes
 

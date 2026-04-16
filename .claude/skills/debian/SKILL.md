@@ -1,14 +1,23 @@
-# Debian & Ubuntu
-
-Rules for Debian, Ubuntu, and derivatives.
+---
+name: debian
+description: >
+  Load when working on a Debian or Ubuntu server
+  — package management (apt-get), stable branch
+  rules, firewall (ufw), automatic security updates
+  (unattended-upgrades), service management, and
+  directory conventions.
+---
 
 ## Package Manager
 
-- Use `apt-get` (not `apt`) — it's more reliable for
-  non-interactive/scripted use.
-- Always run `apt-get update` before installing or upgrading.
-- Dry-run before upgrading: `apt-get --dry-run upgrade`
-- Non-interactive install: `apt-get install -y <package>`
+- Use `apt-get` (not `apt`) — it's more reliable
+  for non-interactive/scripted use.
+- Always run `apt-get update` before installing
+  or upgrading.
+- Dry-run before upgrading:
+  `apt-get --dry-run upgrade`
+- Non-interactive install:
+  `apt-get install -y <package>`
 
 ## Stable Branch Only
 
@@ -23,16 +32,17 @@ Mixing releases breaks dependency chains. A single
 package from `testing` can pull in dozens of
 dependencies that replace stable libraries, leading
 to a partially upgraded system that is difficult to
-maintain and may break on the next `apt-get upgrade`.
+maintain and may break on the next
+`apt-get upgrade`.
 
 ### Preferred Alternatives (in order)
 
 Before reaching for `testing` or `unstable`:
 
-1. **Stable backports.** Check if the package is in
-   `<codename>-backports`. Backports are rebuilt from
-   testing for the stable release and receive security
-   support.
+1. **Stable backports.** Check if the package is
+   in `<codename>-backports`. Backports are rebuilt
+   from testing for the stable release and receive
+   security support.
    ```
    apt-get -t <codename>-backports install <package>
    ```
@@ -44,11 +54,12 @@ Before reaching for `testing` or `unstable`:
 3. **Flatpak or AppImage.** For desktop applications
    on workstations (not servers), sandboxed formats
    avoid polluting the system.
-4. **Build from source or use a static binary.** For
-   CLI tools or services, install to `/usr/local/` or
-   `/opt/` to keep the package manager untouched.
+4. **Build from source or use a static binary.**
+   For CLI tools or services, install to
+   `/usr/local/` or `/opt/` to keep the package
+   manager untouched.
 5. **mise.** For language runtimes, use mise instead
-   of any Debian package. See `rules/mise.md`.
+   of any Debian package. See the `/mise` skill.
 
 ### Last Resort: Pinned Single Package
 
@@ -136,19 +147,22 @@ third-party PPAs.
 - **Expected:** `ufw` (Uncomplicated Firewall)
 - Check status: `ufw status verbose`
 - If `ufw` is not installed, flag it to the user.
-- **Critical:** before enabling `ufw`, always allow SSH
-  first: `ufw allow OpenSSH`. Enabling `ufw` without an
-  SSH rule locks you out of the server immediately.
+- **Critical:** before enabling `ufw`, always allow
+  SSH first: `ufw allow OpenSSH`. Enabling `ufw`
+  without an SSH rule locks you out immediately.
 - After enabling, verify the default policy:
   `ufw status verbose` — look for
-  `Default: deny (incoming)`. If incoming is set to
-  `allow`, fix with `ufw default deny incoming`.
+  `Default: deny (incoming)`. If incoming is set
+  to `allow`, fix with
+  `ufw default deny incoming`.
 
 ## Automatic Security Updates
 
 - **Expected:** `unattended-upgrades`
-- Config: `/etc/apt/apt.conf.d/50unattended-upgrades`
-- Check if active: `systemctl status unattended-upgrades`
+- Config:
+  `/etc/apt/apt.conf.d/50unattended-upgrades`
+- Check if active:
+  `systemctl status unattended-upgrades`
 - If not installed, flag it to the user.
 
 ## Service Manager
@@ -162,36 +176,42 @@ third-party PPAs.
 - Config files: `/etc/`
 - Web roots: `/var/www/`
 - Logs: `/var/log/`
-- Sites config (nginx): `/etc/nginx/sites-available/` and
+- Sites config (nginx):
+  `/etc/nginx/sites-available/` and
   `/etc/nginx/sites-enabled/`
-- Sites config (Apache): `/etc/apache2/sites-available/` and
+- Sites config (Apache):
+  `/etc/apache2/sites-available/` and
   `/etc/apache2/sites-enabled/`
 
 ## Notes
 
-- Debian and Ubuntu use the same package manager and mostly
-  the same conventions, but package names and available
-  versions may differ.
-- Ubuntu may have `snap` packages — prefer `apt-get` unless
-  the user specifically wants snaps.
+- Debian and Ubuntu use the same package manager
+  and mostly the same conventions, but package
+  names and available versions may differ.
+- Ubuntu may have `snap` packages — prefer
+  `apt-get` unless the user specifically wants
+  snaps.
 
 ## Common Pitfalls
 
-- Use `apt-get` not `apt` — `apt` is for interactive
-  use and its output format is unstable.
-- `systemctl restart` vs `systemctl reload` — prefer
-  `reload` when the service supports it (e.g. nginx)
-  to avoid downtime.
-- **Before enabling `ufw`**, always allow SSH first:
-  `ufw allow OpenSSH` (or `ufw allow 22/tcp`). Running
-  `ufw enable` without an SSH rule locks you out of
-  the server immediately. The safe sequence is:
+- Use `apt-get` not `apt` — `apt` is for
+  interactive use and its output format is
+  unstable.
+- `systemctl restart` vs `systemctl reload` —
+  prefer `reload` when the service supports it
+  (e.g. nginx) to avoid downtime.
+- **Before enabling `ufw`**, always allow SSH
+  first: `ufw allow OpenSSH` (or
+  `ufw allow 22/tcp`). Running `ufw enable`
+  without an SSH rule locks you out immediately.
+  The safe sequence is:
   `ufw allow OpenSSH && ufw enable`.
-- After that, `ufw` must be enabled (`ufw enable`) —
-  installing alone does nothing.
+- After that, `ufw` must be enabled
+  (`ufw enable`) — installing alone does nothing.
 - Debian's `nginx` uses `sites-available/` +
-  `sites-enabled/` symlinks. Ubuntu follows the same
-  pattern. Do not put configs directly in `conf.d/`
-  unless there is no `sites-available/` directory.
-- `unattended-upgrades` requires both the package and
-  the apt config — check both.
+  `sites-enabled/` symlinks. Ubuntu follows the
+  same pattern. Do not put configs directly in
+  `conf.d/` unless there is no
+  `sites-available/` directory.
+- `unattended-upgrades` requires both the package
+  and the apt config — check both.

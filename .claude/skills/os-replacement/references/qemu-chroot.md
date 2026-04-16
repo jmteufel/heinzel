@@ -209,7 +209,7 @@ references** before rebooting:
 ```
 # In /boot/loader.conf (using real device name):
 vfs.root.mountfrom="ufs:/dev/ada0p3"
-# Console — see rules/freebsd.md §Console:
+# Console — see /freebsd skill §Console:
 console="vidconsole"  # x86_64 UTM/QEMU or VGA
 # console="efi"       # ARM64 UTM/QEMU only
 ```

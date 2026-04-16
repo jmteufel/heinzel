@@ -16,8 +16,8 @@ description: >
   deployments; GRUB fails silently on ARM64 and
   must be replaced with systemd-boot before the
   first boot.
-- `rules/<family>.md` — for the OS family of the
-  deployed image.
+- The family skill (`/debian`, `/freebsd`, etc.)
+  — for the OS family of the deployed image.
 
 ## Common Issues
 

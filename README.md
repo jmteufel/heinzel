@@ -763,13 +763,13 @@ log show \
 
 ## Supported Distributions
 
-| Family  | Distributions                     | Rule file          |
-| ------- | --------------------------------- | ------------------ |
-| Debian  | Debian, Ubuntu                    | `rules/debian.md`  |
-| RHEL    | RHEL, CentOS, Fedora, Rocky, Alma | `rules/rhel.md`   |
-| SUSE    | openSUSE, SLES                    | `rules/suse.md`   |
-| macOS   | macOS (Apple Silicon & Intel)     | `rules/macos.md`   |
-| FreeBSD | FreeBSD (all versions)            | `rules/freebsd.md` |
+| Family  | Distributions                     | Skill       |
+| ------- | --------------------------------- | ----------- |
+| Debian  | Debian, Ubuntu                    | `/debian`   |
+| RHEL    | RHEL, CentOS, Fedora, Rocky, Alma | `/rhel`     |
+| SUSE    | openSUSE, SLES                    | `/suse`     |
+| macOS   | macOS (Apple Silicon & Intel)     | `/macos`    |
+| FreeBSD | FreeBSD (all versions)            | `/freebsd`  |
 
 Other distributions work too — Heinzel will apply
 general best practices and let you know which OS it
@@ -874,13 +874,12 @@ bin/
     os-replacement/    — Replace one OS with another (manual)
     cloud-image/       — Cloud image deployment (manual)
     version-check/     — Software version checking & nudges
+    debian/            — Debian & Ubuntu rules
+    rhel/              — RHEL, CentOS, Fedora, Rocky, Alma rules
+    suse/              — openSUSE & SLES rules
+    macos/             — macOS rules
+    freebsd/           — FreeBSD rules
 rules/                 — Upstream rule files (git-tracked)
-  debian.md            — Debian & Ubuntu rules
-  rhel.md              — RHEL, CentOS, Fedora, Rocky,
-                         Alma rules
-  suse.md              — openSUSE & SLES rules
-  macos.md             — macOS rules
-  freebsd.md           — FreeBSD rules
   partition-staging.md — Swap reclaim & hot-migrate for
                          repartitioning
   privilege-escalation.md — Sudo, root SSH, unprivileged mode

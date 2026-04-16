@@ -126,7 +126,7 @@ effect. This is an "Always suggest" pattern.
 → Use backports, upstream repos, static binaries,
 or mise first. Only pin a single package from
 testing as absolute last resort with user override.
-Cross-reference: `rules/debian.md` (Stable Branch
+Cross-reference: `/debian` skill (Stable Branch
 Only)
 
 ### Process & Service Management

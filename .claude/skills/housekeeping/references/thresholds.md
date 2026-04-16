@@ -101,7 +101,8 @@ Silicon, 4096 on Intel — get from `vm_stat` header).
 ### Critical Auto-Updates
 
 Check that critical security updates install
-automatically — see `rules/macos.md` for context.
+automatically — see the `/macos` skill for
+context.
 
 - **WARN** if critical auto-updates are disabled
 

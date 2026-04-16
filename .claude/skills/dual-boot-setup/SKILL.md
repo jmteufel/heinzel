@@ -15,8 +15,9 @@ description: >
   EFI and boot entry management.
 - `/cloud-image` skill — if the user wants to
   install via cloud image.
-- `rules/<family>.md` — for each OS being installed
-  (e.g. `debian.md`, `freebsd.md`).
+- The family skill for each OS being installed
+  (`/debian`, `/freebsd`, etc.) — auto-loads on
+  OS detection; invoke manually if needed.
 
 ## Prerequisites
 
