@@ -449,6 +449,16 @@ boot, no IP address) and walks through the
 post-deployment checklist. Includes nocloud SSH
 preparation and ARM64/QEMU GRUB replacement.
 
+### `/version-check`
+
+Auto-invoked when software versions are relevant.
+Classifies installed software as UP TO DATE,
+UPDATE, UPGRADE, or EOL, with INFO/WARN/CRITICAL
+severity, 14-day cooldown tracking, and version
+pins. Adds a Versions section to housekeeping
+reports. Covers OS end-of-life awareness for
+Debian, Ubuntu, RHEL, FreeBSD, SUSE, and macOS.
+
 ## Supported AI Tools
 
 Heinzel is tool-agnostic. Any terminal-based AI
@@ -863,6 +873,7 @@ bin/
     dual-boot-setup/   — Install a second OS alongside an existing one (manual)
     os-replacement/    — Replace one OS with another (manual)
     cloud-image/       — Cloud image deployment (manual)
+    version-check/     — Software version checking & nudges
 rules/                 — Upstream rule files (git-tracked)
   debian.md            — Debian & Ubuntu rules
   rhel.md              — RHEL, CentOS, Fedora, Rocky,
@@ -890,8 +901,6 @@ rules/                 — Upstream rule files (git-tracked)
   directory-copy.md    — Cross-server directory copy checks
   port-check.md        — Port conflict detection before
                          starting services
-  version-check.md     — Proactive stable version checking
-                         and upgrade nudges
 memory/                — All your user state (gitignored
                          by default; single-directory backup)
   MEMORY.md            — Index for server memory

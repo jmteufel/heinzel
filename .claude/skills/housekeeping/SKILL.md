@@ -21,8 +21,8 @@ server. Only invoke on explicit user request.
 5. For each service in `memory.md`, run the relevant
    check from
    [service-checks](references/service-checks.md).
-6. Check installed software versions per
-   `rules/version-check.md`. Include a Versions
+6. Check installed software versions per the
+   `/version-check` skill. Include a Versions
    section in the report.
 7. Interpret all output against the loaded thresholds
    and present the report using the loaded format.

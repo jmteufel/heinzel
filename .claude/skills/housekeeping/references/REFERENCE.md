@@ -55,6 +55,5 @@ Triggered by entries in `memory/servers/<hostname>/memory.md`.
 
 ## Version Status
 
-Checked via `rules/version-check.md` (will become
-a skill). Appended as a "Versions" section in the
-report.
+Checked via the `/version-check` skill. Appended
+as a "Versions" section in the report.
