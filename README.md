@@ -349,11 +349,9 @@ This works on both Linux and macOS:
 
 ## Skills
 
-Skills are bundled workflows that Heinzel loads on
-demand. Each skill runs its own data-collection
-scripts and produces a structured report. Skills
-marked **manual** will not run automatically — you
-must invoke them explicitly.
+Skills are bundled workflows that Heinzel loads
+on demand. Skills marked **manual** will not run
+automatically — you must invoke them explicitly.
 
 ### `/housekeeping` — manual
 
@@ -394,6 +392,62 @@ configures PATH for non-interactive SSH shells, then
 installs the requested runtime. Supports Node.js,
 Ruby, Python, Elixir, Go, Java, and anything else
 mise provides.
+
+### `/efi-boot`
+
+EFI boot management, invoked automatically when
+EFI topics come up, or manually:
+
+```
+ ❯ /efi-boot
+```
+
+Captures current boot entries and ESP state, then
+guides through boot loader setup (systemd-boot,
+GRUB, FreeBSD loader), boot order changes, and
+dual-boot configuration. Includes safety rules for
+BootNext vs BootOrder and QEMU EFI caveats.
+
+### `/dual-boot-setup` — manual
+
+Install a second OS alongside an existing one:
+
+```
+ ❯ /dual-boot-setup
+```
+
+Covers partition planning (including ZFS
+migration), filesystem choice, installation
+methods, boot entry setup, and safe testing via
+BootNext and kernel watchdog.
+
+### `/os-replacement` — manual
+
+Replace one OS with another on a server:
+
+```
+ ❯ /os-replacement
+```
+
+Covers pre-replacement inventory, boot
+configuration safety, method selection (console,
+SSH-only hot-migration, tmpfs rescue, mfsBSD for
+cross-OS), QEMU as a cross-OS chroot alternative,
+and a full post-replacement checklist.
+
+### `/cloud-image` — manual
+
+Deploy Linux from a pre-built cloud image:
+
+```
+ ❯ /cloud-image
+```
+
+Diagnoses common failures (missing SSH host keys,
+cloud-init hanging, networkd-wait-online blocking
+boot, no IP address) and walks through the
+post-deployment checklist. Includes nocloud SSH
+preparation and ARM64/QEMU GRUB replacement.
 
 ## Supported AI Tools
 
@@ -801,10 +855,14 @@ bin/
   hooks/
     check-updates.sh   — Auto-check for repo updates and
                          auto-migrate on session start
-  skills/              — On-demand workflows (invoked manually)
-    housekeeping/      — Routine server health inspection
-    security-audit/    — Security configuration audit
-    mise/              — Language runtime installation
+  skills/              — On-demand workflows
+    housekeeping/      — Routine server health inspection (manual)
+    security-audit/    — Security configuration audit (manual)
+    mise/              — Language runtime installation (manual)
+    efi-boot/          — EFI boot management & dual-boot
+    dual-boot-setup/   — Install a second OS alongside an existing one (manual)
+    os-replacement/    — Replace one OS with another (manual)
+    cloud-image/       — Cloud image deployment (manual)
 rules/                 — Upstream rule files (git-tracked)
   debian.md            — Debian & Ubuntu rules
   rhel.md              — RHEL, CentOS, Fedora, Rocky,
@@ -812,10 +870,6 @@ rules/                 — Upstream rule files (git-tracked)
   suse.md              — openSUSE & SLES rules
   macos.md             — macOS rules
   freebsd.md           — FreeBSD rules
-  efi-boot.md          — EFI boot management & dual-boot
-  cloud-image.md       — Cloud image deployment
-  dual-boot.md         — Dual-boot setup workflow
-  os-replacement.md    — OS wipe-and-replace workflow
   partition-staging.md — Swap reclaim & hot-migrate for
                          repartitioning
   privilege-escalation.md — Sudo, root SSH, unprivileged mode

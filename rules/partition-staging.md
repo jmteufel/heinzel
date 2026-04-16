@@ -9,7 +9,7 @@ physical access.
 
 Read this file when:
 - Replacing an OS on a server (cross-reference
-  with `rules/os-replacement.md`)
+  with the `/os-replacement` skill)
 - Repartitioning a live system
 - Needing temporary workspace on a partition that
   is currently in use (e.g. swap)
@@ -193,7 +193,7 @@ gpart add -t linux-data vtbd0  # new root (rest)
 The old OS continues running from the swap
 partition. Install the new OS to the new root
 partition, set up the bootloader, and reboot. See
-`rules/os-replacement.md` §"SSH-Only Replacement
+the `/os-replacement` skill §"SSH-Only Replacement
 via Hot-Migration" for the full workflow.
 
 ## Step 4: Repartition
