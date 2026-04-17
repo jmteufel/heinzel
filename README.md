@@ -866,22 +866,22 @@ bin/
     check-updates.sh   — Auto-check for repo updates and
                          auto-migrate on session start
   skills/              — On-demand workflows
-    housekeeping/      — Routine server health inspection (manual)
-    security-audit/    — Security configuration audit (manual)
-    mise/              — Language runtime installation (manual)
-    efi-boot/          — EFI boot management & dual-boot
-    dual-boot-setup/   — Install a second OS alongside an existing one (manual)
-    os-replacement/    — Replace one OS with another (manual)
+    antipatterns/      — Common anti-patterns to review
     cloud-image/       — Cloud image deployment (manual)
-    version-check/     — Software version checking & nudges
     debian/            — Debian & Ubuntu rules
-    rhel/              — RHEL, CentOS, Fedora, Rocky, Alma rules
-    suse/              — openSUSE & SLES rules
-    macos/             — macOS rules
+    dual-boot-setup/   — Install a second OS alongside an existing one (manual)
+    efi-boot/          — EFI boot management & dual-boot
     freebsd/           — FreeBSD rules
+    housekeeping/      — Routine server health inspection (manual)
+    macos/             — macOS rules
+    mise/              — Language runtime installation (manual)
+    os-replacement/    — Replace one OS with another (manual)
+    rhel/              — RHEL, CentOS, Fedora, Rocky, Alma rules
+    security-audit/    — Security configuration audit (manual)
+    suse/              — openSUSE & SLES rules
+    version-check/     — Software version checking & nudges
 rules/                 — Upstream rule files (git-tracked)
-  partition-staging.md — Swap reclaim & hot-migrate for
-                         repartitioning
+  partition-staging.md — Swap reclaim & hot-migrate for repartitioning
   privilege-escalation.md — Sudo, root SSH, unprivileged mode
   os-detection.md      — OS detection procedure
   ssh-user.md          — SSH username & language management
@@ -894,7 +894,6 @@ rules/                 — Upstream rule files (git-tracked)
   anomaly-detection.md — Prompt injection & anomaly detection
   dns-aliases.md       — DNS alias detection & management
   backups.md           — Config file backup procedure
-  best-practices.md    — Common anti-patterns to review
                          before risky actions
   deployment.md        — CI/CD deployment user rules
   directory-copy.md    — Cross-server directory copy checks
