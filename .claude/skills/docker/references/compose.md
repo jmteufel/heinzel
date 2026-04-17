@@ -12,6 +12,35 @@ canonical name in the Docker v2 specification.
 name from v1. Discovery order when both exist:
 `compose.yaml` wins.
 
+## compose.override.yaml
+
+Compose automatically loads and merges
+`compose.override.yaml` from the same directory.
+Override keys win; new keys are added. This is the
+standard pattern for dev/prod splits without
+maintaining separate file sets or `-f` flag chains.
+
+Convention:
+- `compose.yaml` — production baseline: no source
+  mounts, no debug ports, no dev-only services.
+- `compose.override.yaml` — dev additions: source
+  bind-mounts, exposed debugger ports, dev tools.
+
+```yaml
+# compose.override.yaml
+services:
+  app:
+    volumes:
+      - ./src:/app/src       # live code reload
+    ports:
+      - "127.0.0.1:9229:9229"  # debugger
+    environment:
+      DEBUG: "true"
+```
+
+Never commit override files containing secrets or
+personal paths. If the file is shared, it is code.
+
 ## Image Tags
 
 Always pin to explicit tags — never `latest`. It
@@ -59,19 +88,17 @@ Bad: `"3000:3000"` (binds `0.0.0.0` by default)
 There are three distinct mechanisms — they are
 not interchangeable:
 
-- **`.env` file** (in the same directory as
-  `compose.yaml`) — auto-loaded by Compose for
-  variable *substitution inside the compose file*
-  itself: `image: myapp:${VERSION}`. These
-  variables are NOT automatically injected into
-  containers.
-- **`env_file:`** (service key) — reads a file
-  and injects its contents into the *container's*
-  environment. The file is not parsed by Compose;
-  it goes straight to the process.
+- **`.env` file** (same directory as `compose.yaml`)
+  — auto-loaded by Compose for variable
+  *substitution inside the compose file* itself:
+  `image: myapp:${VERSION}`. These variables are
+  NOT automatically injected into containers.
+- **`env_file:`** (service key) — reads a file and
+  injects its contents into the *container's*
+  environment. Not parsed by Compose; goes straight
+  to the process.
 - **`environment:`** (service key) — inline
-  key=value pairs injected directly into the
-  container environment.
+  key=value pairs injected into the container.
 
 Common mistake: putting secrets in `.env` and
 assuming the container sees them. It doesn't
@@ -82,8 +109,8 @@ Never commit `.env` files. Add to `.gitignore`.
 ## `depends_on` Does Not Mean Ready
 
 `depends_on: - db` only waits for the `db`
-container to *start*, not for the database to
-be *accepting connections*. Apps that connect at
+container to *start*, not for the database to be
+*accepting connections*. Apps that connect at
 startup will fail with a race condition.
 
 The correct pattern combines a `healthcheck` on
@@ -110,6 +137,39 @@ service_healthy` has nothing to evaluate and
 Compose will error. See `references/images.md`
 for Dockerfile HEALTHCHECK guidance.
 
+## Init Containers
+
+For tasks that must complete before the app starts
+— database migrations, schema checks, seed data —
+use a one-shot service with `condition:
+service_completed_successfully`:
+
+```yaml
+services:
+  migrate:
+    image: myapp
+    command: ["python", "manage.py", "migrate"]
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    image: myapp
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+```
+
+`service_completed_successfully` waits for the
+container to exit with code 0. If the migration
+fails (non-zero exit), the app does not start.
+`restart: "no"` prevents Compose from restarting
+the migration container on failure — let it fail
+visibly instead of looping.
+
 ## Resource Limits
 
 Without memory limits, a single runaway container
@@ -132,11 +192,10 @@ services:
 `deploy.resources` is respected by Compose v2 in
 standalone mode (no Swarm required). Set `limits`
 to the maximum the service should ever use. Set
-`reservations` to what it needs under normal load
-— Docker uses this for scheduling decisions.
+`reservations` to what it needs under normal load.
 
-When a container exceeds its memory limit, it is
-killed with OOM. Size limits conservatively and
+When a container exceeds its memory limit it is
+killed by OOM. Size limits conservatively and
 monitor actual usage with `docker stats` before
 tightening.
 
@@ -155,8 +214,36 @@ Avoid setting `container_name:` in compose.yaml.
 
 The only reason to set it is to make a container
 predictable for external scripts — which is a
-sign that those scripts should be using service
-names or labels instead.
+sign those scripts should use service names or
+labels instead.
+
+## Profiles
+
+Mark optional services with `profiles:` to keep
+them out of the default `docker compose up`:
+
+```yaml
+services:
+  app:
+    image: myapp            # always starts
+
+  debugger:
+    image: busybox
+    profiles: [dev]         # opt-in only
+
+  exporter:
+    image: prom/node-exporter
+    profiles: [monitoring]
+```
+
+Activate with `--profile dev` or by setting
+`COMPOSE_PROFILES=dev,monitoring` in the
+environment. Services without `profiles:` always
+start regardless of which profiles are active.
+
+Use cases: dev tools, debuggers, monitoring
+sidecars, load testing services — anything that
+must never start automatically in production.
 
 ## Networks
 
@@ -166,8 +253,59 @@ within that network. Add explicit named networks
 only when services across multiple compose projects
 need to reach each other.
 
-Internal-only services that should have no outbound
-internet access: `internal: true` on the network.
+Internal-only services with no outbound internet
+requirement: `internal: true` on the network.
+
+## Network Namespace Sharing (Sidecar)
+
+`network_mode: "service:<name>"` makes a container
+join another container's network namespace. They
+share the same IP address, network interfaces, and
+loopback — they are network-identical processes.
+
+The canonical use case is a VPN or proxy sidecar:
+one container owns the network (VPN tunnel,
+WireGuard, Tor exit), and the app routes all its
+traffic through it by sharing its namespace.
+
+```yaml
+services:
+  vpn:
+    image: ghcr.io/qdm12/gluetun
+    cap_add: [NET_ADMIN]
+    devices: [/dev/net/tun]
+    ports:
+      - "127.0.0.1:8080:8080"  # app's port here
+    healthcheck:
+      test: ["CMD", "/gluetun-entrypoint", "healthcheck"]
+      interval: 5s
+      retries: 5
+
+  app:
+    image: myapp
+    network_mode: "service:vpn"
+    depends_on:
+      vpn:
+        condition: service_healthy
+```
+
+Key rules:
+
+- **Port publishing goes on the namespace owner
+  (`vpn`), not the sidecar (`app`).** The sidecar
+  has no independent network interface to publish
+  from.
+- **`depends_on: condition: service_healthy` is
+  required.** Without it, `app` starts before the
+  tunnel is up and traffic escapes unencrypted.
+- **Other Compose services cannot reach `app`
+  directly** — they must address `vpn` by service
+  name, and traffic arrives at `app` via the shared
+  namespace.
+- **Within the shared namespace, containers
+  communicate via `localhost`.**
+- `network_mode: "service:<name>"` and `networks:`
+  are mutually exclusive on the same service.
 
 ## Updating Images
 

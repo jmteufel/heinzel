@@ -50,5 +50,7 @@ Load the relevant section on demand:
   logs, exec, volumes, port conflicts.
 - `references/images.md` — image management,
   Dockerfile best practices, multi-stage builds.
-- `references/security.md` — rootless Docker,
-  capabilities, secrets, hardening checklist.
+- `references/security.md` — socket mounting
+  risks, no-new-privileges, rootless Docker,
+  capabilities, non-root user tradeoffs, secrets,
+  hardening checklist.

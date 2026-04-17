@@ -86,6 +86,39 @@ ENTRYPOINT ["python", "-m", "gunicorn"]
 ENTRYPOINT python -m gunicorn
 ```
 
+### PID 1 and Signal Handling
+
+The exec form of `ENTRYPOINT` fixes signal
+forwarding to the app process — but it does not
+fix zombie reaping. If the app spawns child
+processes, the container needs a proper init to
+collect zombie processes when they exit.
+
+The simplest fix in compose.yaml:
+
+```yaml
+services:
+  app:
+    init: true    # uses Docker's built-in tini
+```
+
+`init: true` prepends `tini` as PID 1. It
+forwards signals to the app and reaps zombies.
+It is the right default for any service that
+spawns subprocesses (job queues, shell scripts,
+Node.js cluster workers, etc.).
+
+Alternatively, bake it into the image:
+
+```dockerfile
+ENTRYPOINT ["/sbin/tini", "--", "myapp"]
+```
+
+Use the image approach when you distribute the
+image and cannot rely on the runtime setting.
+Use `init: true` in compose.yaml when you control
+the deployment but not necessarily the image.
+
 ### Multi-Stage Builds
 
 Keep build tooling out of the final image. Copy
