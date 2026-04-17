@@ -44,7 +44,8 @@ Load the relevant section on demand:
 - `references/installation.md` — installing Docker
   from official repos per distro, daemon.json.
 - `references/compose.md` — Docker Compose v2
-  commands and compose file conventions.
+  conventions, depends_on readiness, resource
+  limits, env var mechanisms.
 - `references/operations.md` — container lifecycle,
   logs, exec, volumes, port conflicts.
 - `references/images.md` — image management,

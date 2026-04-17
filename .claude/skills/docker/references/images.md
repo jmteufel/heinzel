@@ -127,7 +127,10 @@ The secret is never written to a layer.
 Define a `HEALTHCHECK` so Docker and Compose know
 when the container is actually ready, not just
 running. Without it, `depends_on: condition:
-service_healthy` in compose.yaml cannot work.
+service_healthy` in compose.yaml has nothing to
+evaluate and Compose will error. See
+`references/compose.md` for the full `depends_on`
+readiness pattern.
 
 ### Dockerfile Checklist
 

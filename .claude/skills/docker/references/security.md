@@ -104,6 +104,32 @@ Avoid adding: `SYS_ADMIN`, `SYS_PTRACE`,
 `NET_ADMIN`, `DAC_OVERRIDE` — their presence in
 a request usually signals a misconfigured image.
 
+## Docker Socket Mounting
+
+**Mounting the Docker socket into a container is
+equivalent to giving it root on the host.**
+
+```yaml
+# This grants full daemon access — root equivalent
+volumes:
+  - /var/run/docker.sock:/var/run/docker.sock
+```
+
+Any process inside the container can now spawn
+new containers, mount the host filesystem, and
+escape the container entirely:
+`docker run --rm -v /:/host alpine chroot /host`
+
+This pattern appears in tutorials for Watchtower,
+Portainer, CI agents, and similar tools. Treat
+it the same as `--privileged` — require explicit
+user approval and document why it is needed.
+
+Safer alternatives when full socket access is too
+broad: Docker's TCP API with TLS client auth, or
+a socket proxy (e.g. `tecnativa/docker-socket-proxy`)
+that restricts which API endpoints are accessible.
+
 ## docker Group
 
 **Avoid adding users to the `docker` group.**
@@ -113,6 +139,17 @@ root — a group member can trivially escalate:
 
 Safer alternatives: rootless Docker per user, or
 `sudo docker` with a narrow `sudoers` rule.
+
+## No New Privileges
+
+Add `--security-opt no-new-privileges:true` (or
+`security_opt: ["no-new-privileges:true"]` in
+compose.yaml) to prevent processes inside the
+container from gaining additional privileges via
+setuid/setgid binaries or Linux capabilities after
+startup. Low cost, worthwhile default for any
+container not explicitly designed to switch users
+at runtime.
 
 ## Read-Only Filesystem
 
@@ -159,10 +196,12 @@ requirement, set `internal: true` on the network.
 - [ ] Non-root `USER` in Dockerfile (owned images)
       or verified `user:` in compose.yaml (third-
       party images — check ownership first)
+- [ ] `security_opt: ["no-new-privileges:true"]`
 - [ ] Rootless Docker where possible
 - [ ] No `--privileged` without approval
 - [ ] `--cap-drop=ALL` + explicit `--cap-add`
 - [ ] No users in `docker` group
+- [ ] Docker socket not mounted without approval
 - [ ] `read_only: true` + tmpfs for writable paths
 - [ ] No secrets in env vars or image layers
 - [ ] Separate networks for unrelated services

@@ -56,11 +56,107 @@ Bad: `"3000:3000"` (binds `0.0.0.0` by default)
 
 ## Environment Variables
 
-Never put secrets directly in `compose.yaml`.
-Use an `.env` file (gitignored) with `env_file:`.
-The `.env` file is auto-loaded for variable
-substitution, but `env_file:` is required to pass
-variables into the container environment.
+There are three distinct mechanisms — they are
+not interchangeable:
+
+- **`.env` file** (in the same directory as
+  `compose.yaml`) — auto-loaded by Compose for
+  variable *substitution inside the compose file*
+  itself: `image: myapp:${VERSION}`. These
+  variables are NOT automatically injected into
+  containers.
+- **`env_file:`** (service key) — reads a file
+  and injects its contents into the *container's*
+  environment. The file is not parsed by Compose;
+  it goes straight to the process.
+- **`environment:`** (service key) — inline
+  key=value pairs injected directly into the
+  container environment.
+
+Common mistake: putting secrets in `.env` and
+assuming the container sees them. It doesn't
+unless `env_file: .env` is also set.
+
+Never commit `.env` files. Add to `.gitignore`.
+
+## `depends_on` Does Not Mean Ready
+
+`depends_on: - db` only waits for the `db`
+container to *start*, not for the database to
+be *accepting connections*. Apps that connect at
+startup will fail with a race condition.
+
+The correct pattern combines a `healthcheck` on
+the dependency with `condition: service_healthy`:
+
+```yaml
+services:
+  app:
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+```
+
+Without the `healthcheck`, `condition:
+service_healthy` has nothing to evaluate and
+Compose will error. See `references/images.md`
+for Dockerfile HEALTHCHECK guidance.
+
+## Resource Limits
+
+Without memory limits, a single runaway container
+can consume all host memory and trigger the OOM
+killer, taking down unrelated services. Set limits
+on every production service:
+
+```yaml
+services:
+  app:
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "1.0"
+        reservations:
+          memory: 128m
+```
+
+`deploy.resources` is respected by Compose v2 in
+standalone mode (no Swarm required). Set `limits`
+to the maximum the service should ever use. Set
+`reservations` to what it needs under normal load
+— Docker uses this for scheduling decisions.
+
+When a container exceeds its memory limit, it is
+killed with OOM. Size limits conservatively and
+monitor actual usage with `docker stats` before
+tightening.
+
+## `container_name:` Anti-Pattern
+
+Avoid setting `container_name:` in compose.yaml.
+
+- It breaks `docker compose up --scale` — you
+  cannot run multiple replicas of a service with
+  a fixed container name.
+- It creates collision risk when multiple compose
+  projects run on the same server.
+- It is unnecessary for inter-service networking:
+  within a Compose project, services reach each
+  other by *service name*, not container name.
+
+The only reason to set it is to make a container
+predictable for external scripts — which is a
+sign that those scripts should be using service
+names or labels instead.
 
 ## Networks
 
