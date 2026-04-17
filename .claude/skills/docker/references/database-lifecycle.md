@@ -101,53 +101,64 @@ files in `initdb.d/`:
 
 ## Backup Schedule
 
-Run `pg_dump` from a container that shares the
-database network, writing to a bind-mounted host
-directory. Use a container-native scheduler
-(e.g. supercronic) rather than a host cron job —
-the schedule lives with the stack, not on the
-host, and works regardless of host cron
-configuration.
+Run `pg_dump` from a long-lived container that
+shares the database network. Keep the schedule
+inside the stack — no host cron dependency.
 
-Activate via a Compose profile so it does not
-start with the main stack:
-
-For scheduled backups, run supercronic inside a
-long-lived container. The schedule lives with the
-stack — no host cron dependency:
+`postgres:XX-alpine` already contains both
+`pg_dump` and busybox `crond`. No custom image
+is needed:
 
 ```yaml
 services:
   backup:
-    image: ghcr.io/aptible/supercronic
-    command: /etc/supercronic/crontab
-    configs:
-      - source: backup-cron
-        target: /etc/supercronic/crontab
+    image: postgres:16-alpine
+    entrypoint: >
+      sh -c '
+        echo "0 2 * * * pg_dump -Fc -h db
+        -U postgres mydb
+        > /backups/$$(date +%F-%H%M).dump"
+        > /etc/crontabs/postgres
+        && crond -f -d 8'
+    environment:
+      PGPASSWORD: "${DB_PASSWORD}"
     volumes:
       - /srv/backups/db:/backups
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
-
-configs:
-  backup-cron:
-    content: |
-      0 2 * * * pg_dump -Fc -h db -U postgres \
-        mydb > /backups/$$(date +%F-%H%M).dump
+    user: postgres
 ```
 
 For on-demand runs, use a one-shot profile
 container instead:
 
+```yaml
+services:
+  backup-once:
+    image: postgres:16-alpine
+    command: >
+      sh -c 'pg_dump -Fc -h db -U postgres
+      mydb > /backups/$$(date +%F-%H%M).dump'
+    environment:
+      PGPASSWORD: "${DB_PASSWORD}"
+    volumes:
+      - /srv/backups/db:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles: [backup]
+    restart: "no"
+```
+
 ```bash
-docker compose --profile backup run --rm backup
+docker compose --profile backup run --rm backup-once
 ```
 
 Suggested retention: daily backups for 7 days,
-weekly for 4 weeks. Add a cleanup command to the
-crontab or a separate scheduled entry.
+weekly for 4 weeks. Add a cleanup entry to the
+crontab alongside the dump command.
 
 **Backup verification is not optional.** An
 untested backup is not a backup. Restore a dump
