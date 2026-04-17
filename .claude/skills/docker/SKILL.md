@@ -43,21 +43,24 @@ Load the relevant section on demand:
 
 - `references/installation.md` — installing Docker
   from official repos per distro.
-- `references/config.md` — daemon.json defaults,
-  logging, security-relevant daemon options.
-- `references/compose.md` — Docker Compose v2
-  conventions, depends_on readiness, resource
-  limits, env var mechanisms.
-- `references/operations.md` — volumes, prune/
-  down -v caution, port conflicts.
+- `references/config.md` — data-root placement,
+  daemon.json defaults, logging, security-relevant
+  daemon options.
+- `references/compose.md` — compose.yaml
+  conventions, env var mechanisms, depends_on
+  readiness, init containers, resource limits,
+  profiles, compose.override.yaml.
+- `references/operations.md` — volume backup/
+  restore, prune/down -v caution, port conflicts.
 - `references/debugging.md` — containers that
   exit immediately, entrypoint override, OOM
   diagnosis, compose-specific debugging.
 - `references/network-namespace.md` — VPN/proxy
   sidecar pattern, shared network namespaces.
-- `references/images.md` — image management,
-  Dockerfile best practices, multi-stage builds.
-- `references/security.md` — socket mounting
-  risks, no-new-privileges, rootless Docker,
-  capabilities, non-root user tradeoffs, secrets,
-  hardening checklist.
+- `references/images.md` — Dockerfile best
+  practices, layer caching, multi-stage and
+  multi-arch builds, tini, image tags.
+- `references/security.md` — non-root user
+  tradeoffs, vulnerability scanning, socket
+  mounting risks, capabilities, rootless Docker,
+  secrets, hardening checklist.
