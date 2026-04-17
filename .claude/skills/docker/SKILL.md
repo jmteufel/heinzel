@@ -48,6 +48,8 @@ Load the relevant section on demand:
   limits, env var mechanisms.
 - `references/operations.md` — container lifecycle,
   logs, exec, volumes, port conflicts.
+- `references/network-namespace.md` — VPN/proxy
+  sidecar pattern, shared network namespaces.
 - `references/images.md` — image management,
   Dockerfile best practices, multi-stage builds.
 - `references/security.md` — socket mounting
