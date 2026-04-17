@@ -1,165 +1,170 @@
 # Docker Security
 
+## Non-Root User
+
+Running a container process as root is the most
+common Docker security mistake. The right fix
+depends on who owns the image.
+
+### Dockerfile `USER` (preferred when you own the
+image)
+
+Set the user in the Dockerfile. This is the right
+layer: ownership of files can be fixed at build
+time, and the UID becomes part of the image
+contract.
+
+```dockerfile
+RUN useradd -r -u 1001 appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+```
+
+- The `chown` must come before `USER` — after the
+  switch you no longer have permission to change
+  ownership.
+- Visible in image metadata; anyone running the
+  image gets the right default without thinking
+  about it.
+- Can still be overridden at runtime with `--user`.
+
+### Runtime `--user` / compose `user:` (for
+third-party images)
+
+Overrides the image's `USER` at runtime without
+rebuilding. Useful when the upstream image runs as
+root and you want to harden it.
+
+**Critical tradeoff:** runtime `--user` changes
+the UID of the process but does NOT change file
+ownership inside the container. If the image was
+built with files owned by root (uid 0) and you
+run it as uid 1001, the process will fail to read
+or write those files.
+
+Before using `user:` on a third-party image:
+- Check what UID the image was designed for:
+  `docker inspect --format '{{.Config.User}}' <image>`
+- Many official images (postgres, redis, nginx)
+  already use a non-root user with correct
+  ownership — overriding it may break things.
+- If the image has an explicit non-root user but
+  runs as root by default, switching to that UID
+  is safe: `user: "1001:1001"` in `compose.yaml`.
+- If files in the image are all owned by root,
+  runtime `--user` will produce permission errors.
+  The fix is a custom image with a proper `chown`.
+
+**Anti-pattern:** blindly adding `user: "1001:1001"`
+to every service in `compose.yaml` without
+checking the image's ownership model. It looks
+like a security improvement but often just breaks
+the service in a confusing way.
+
+### Summary
+
+| Scenario | Approach |
+|---|---|
+| You build the image | `USER` in Dockerfile + `RUN chown` |
+| Third-party image, non-root UID available | `user:` in compose.yaml |
+| Third-party image, files owned by root | Build a wrapper image with `chown` |
+
 ## Rootless Docker
 
-Rootless Docker runs the daemon and containers
-without root privileges. Preferred for all
-non-privileged workloads.
-
-**Supported:** Debian 10+, Ubuntu 20.04+,
+Runs the daemon and containers without root
+privileges. Preferred for all non-privileged
+workloads. Supported on Debian 10+, Ubuntu 20.04+,
 RHEL 8+, Fedora 31+.
 
-Install rootless mode (as the target user, not
-root):
+Set up as the target user (not root):
+`dockerd-rootless-setuptool.sh install`
 
-```bash
-dockerd-rootless-setuptool.sh install
-```
-
-The socket path changes:
-`unix:///run/user/<uid>/docker.sock`
-
-Set `DOCKER_HOST` for CLI use:
-
-```bash
-export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
-```
-
-Limitations: some network modes and host-port
-bindings below 1024 require additional setup.
+Limitations: some network modes and port bindings
+below 1024 require extra setup.
 
 ## Privileged Containers
 
 **Never use `--privileged` without explicit user
-approval.** It grants the container nearly
-complete access to the host kernel and devices —
-equivalent to running as root on the host.
+approval.** It grants the container nearly complete
+access to the host kernel and devices — equivalent
+to running as root on the host.
 
-If a container claims to need `--privileged`,
-investigate first:
-- Often only one or two capabilities are actually
-  needed — use `--cap-add` instead.
-- Device access: use `--device /dev/foo` rather
-  than full `--privileged`.
-
-## docker Group
-
-**Avoid adding users to the `docker` group.**
-Group membership grants passwordless root
-equivalent via `docker run --rm -v /:/host alpine`.
-
-Safer alternatives:
-- Use rootless Docker per user.
-- Use `sudo docker` with a specific `sudoers`
-  rule if rootless is not an option.
-
-## Capabilities
-
-Drop all capabilities and add only what the
-application needs:
-
-```bash
-docker run \
-  --cap-drop=ALL \
-  --cap-add=NET_BIND_SERVICE \
-  <image>
-```
+When a container claims to need `--privileged`,
+investigate: usually only one or two specific
+capabilities are actually needed. Use
+`--cap-add=<CAP>` instead. For device access,
+use `--device /dev/foo` rather than full privilege.
 
 Common capabilities actually needed:
 - `NET_BIND_SERVICE` — bind ports below 1024
 - `CHOWN` — change file ownership at startup
 - `SETUID`/`SETGID` — switch UID at startup
 
-Avoid: `SYS_ADMIN`, `SYS_PTRACE`, `NET_ADMIN`,
-`DAC_OVERRIDE` (usually a sign of a misconfigured
-image).
+Avoid adding: `SYS_ADMIN`, `SYS_PTRACE`,
+`NET_ADMIN`, `DAC_OVERRIDE` — their presence in
+a request usually signals a misconfigured image.
 
-## Non-Root UID
+## docker Group
 
-Run containers as a non-root user when the image
-supports it:
+**Avoid adding users to the `docker` group.**
+Group membership is equivalent to passwordless
+root — a group member can trivially escalate:
+`docker run --rm -v /:/host alpine chroot /host`.
 
-```bash
-docker run --user 1001:1001 <image>
-```
-
-Or set in `compose.yml`:
-
-```yaml
-services:
-  app:
-    user: "1001:1001"
-```
+Safer alternatives: rootless Docker per user, or
+`sudo docker` with a narrow `sudoers` rule.
 
 ## Read-Only Filesystem
 
-Make the container filesystem read-only and add
-tmpfs for writable directories:
-
-```bash
-docker run \
-  --read-only \
-  --tmpfs /tmp:rw,noexec,nosuid \
-  --tmpfs /run:rw,noexec,nosuid \
-  <image>
-```
-
-In `compose.yml`:
+Mark the container filesystem read-only and add
+tmpfs mounts for paths the process needs to write:
 
 ```yaml
 services:
   app:
     read_only: true
     tmpfs:
-      - /tmp:exec
+      - /tmp
       - /run
 ```
+
+This limits the blast radius if the container is
+compromised — the attacker cannot write to the
+container's filesystem.
 
 ## Secrets
 
 - **Never pass secrets as environment variables**
-  if avoidable — they appear in `docker inspect`
-  and process listings.
-- Use Docker Secrets (Swarm) or a secrets manager
-  (Vault, AWS SSM) for production.
-- For simpler setups, bind-mount a secrets file
-  from a protected host path (mode 0400):
-
-  ```bash
-  docker run \
-    -v /etc/myapp/secret.key:/run/secrets/key:ro \
-    <image>
-  ```
-
-- Never bake secrets into images — they persist
-  in layer history even after `RUN rm`.
+  if avoidable — they appear in `docker inspect`,
+  `/proc/<pid>/environ`, and often in logs.
+- Never bake secrets into images — they persist in
+  layer history even after `RUN rm`.
+- For simple setups, bind-mount a secrets file
+  from a host path with mode 0400.
+- For production, use Docker Secrets (Swarm) or an
+  external secrets manager.
 
 ## Network Isolation
 
-- Services that do not need to communicate should
-  be on separate networks.
-- Disable inter-container communication when not
-  needed (`--icc=false` in `daemon.json`).
-- Internal-only services: set `internal: true` on
-  the Compose network — no outbound internet.
+Services that don't need to communicate should be
+on separate networks — Compose's default bridge
+puts all services in the same network and they can
+reach each other freely.
 
-  ```yaml
-  networks:
-    backend:
-      internal: true
-  ```
+For backend services with no outbound internet
+requirement, set `internal: true` on the network.
 
 ## Security Hardening Checklist
 
+- [ ] Non-root `USER` in Dockerfile (owned images)
+      or verified `user:` in compose.yaml (third-
+      party images — check ownership first)
 - [ ] Rootless Docker where possible
 - [ ] No `--privileged` without approval
-- [ ] No users in `docker` group
 - [ ] `--cap-drop=ALL` + explicit `--cap-add`
-- [ ] Non-root `USER` in Dockerfile or `--user`
-  at runtime
-- [ ] `--read-only` + tmpfs for writable paths
+- [ ] No users in `docker` group
+- [ ] `read_only: true` + tmpfs for writable paths
 - [ ] No secrets in env vars or image layers
-- [ ] Internal Compose network for backend
-  services
+- [ ] Separate networks for unrelated services
 - [ ] Firewall: loopback-bind published ports
-  (see main skill)
+      (see main skill)

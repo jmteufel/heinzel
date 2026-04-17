@@ -1,120 +1,60 @@
 # Container Operations
 
-## Lifecycle
+## Volume Backup and Restore
+
+Named volumes are opaque to the host. To back up,
+spin up a temporary container that mounts the
+volume and writes a tar archive to a host path:
 
 ```bash
-docker ps -a                  # list all containers
-docker start <name>           # start stopped container
-docker stop <name>            # graceful stop (SIGTERM)
-docker kill <name>            # immediate stop (SIGKILL)
-docker restart <name>         # stop + start
-docker rm <name>              # remove stopped container
-docker rm -f <name>           # force-remove running
-docker rename <old> <new>     # rename container
-```
-
-## Logs
-
-```bash
-docker logs <name>            # all logs
-docker logs -f <name>         # follow (tail -f)
-docker logs --tail 100 <name> # last 100 lines
-docker logs --since 1h <name> # last hour
-docker logs --since \
-  2024-01-15T10:00:00 <name>  # since timestamp
-```
-
-## Shell and Debugging
-
-```bash
-docker exec -it <name> sh     # sh shell
-docker exec -it <name> bash   # bash (if available)
-docker exec -it <name> \
-  <cmd>                       # run any command
-docker inspect <name>         # full JSON config
-docker inspect <name> \
-  --format '{{.State.Status}}'  # single field
-docker stats                  # live resource usage
-docker stats --no-stream      # one-shot snapshot
-docker top <name>             # processes in container
-docker diff <name>            # filesystem changes
-```
-
-## Volumes
-
-### List and Inspect
-
-```bash
-docker volume ls
-docker volume inspect <name>
-```
-
-### Backup Named Volume
-
-```bash
+# Backup
 docker run --rm \
   -v <volume>:/data \
   -v $(pwd):/backup \
   alpine tar czf /backup/backup.tar.gz -C /data .
-```
 
-### Restore Named Volume
-
-```bash
+# Restore
 docker run --rm \
   -v <volume>:/data \
   -v $(pwd):/backup \
   alpine tar xzf /backup/backup.tar.gz -C /data
 ```
 
-### Caution with Prune
+Bind mounts (`./data:/app/data`) sit directly on
+the host filesystem — back them up like any other
+directory.
 
-`docker volume prune` removes **all** unused
-volumes — including ones for stopped containers
-you intend to restart. Always back up first or
-specify volumes explicitly.
+## Prune Caution
 
-## Disk Usage
+`docker system prune` and `docker volume prune`
+are destructive and non-reversible. Key behavior
+to know before running:
 
-```bash
-docker system df              # summary
-docker system df -v           # per-object detail
-```
+- `docker volume prune` removes **all** volumes
+  not currently mounted by a running container —
+  including volumes for stopped or `down` Compose
+  stacks that you intend to restart.
+- `docker system prune -af` removes unused images
+  too — including ones you deliberately pulled but
+  haven't started yet.
 
-## Cleanup
-
-```bash
-# Remove stopped containers and dangling images
-docker system prune -f
-
-# Also remove unused named images (careful)
-docker system prune -af
-
-# Remove only dangling images
-docker image prune -f
-
-# Remove only stopped containers
-docker container prune -f
-```
+Back up volume data before pruning. Use
+`docker volume ls` and `docker system df -v` to
+understand what will be removed.
 
 ## Port Conflicts
 
-Before publishing a host port, verify it is free:
+Before publishing a host port, verify it is free.
+Follow `rules/port-check.md` for the full check.
 
-```bash
-ss -tlnp | grep :<port>
+Prefer Unix sockets over TCP for services behind
+a reverse proxy — avoids the port entirely and
+keeps the binding off the network stack. Pass the
+socket into the container via a bind mount:
+
+```yaml
+volumes:
+  - /run/myapp:/run/myapp
 ```
 
-Follow `rules/port-check.md` for the full check
-procedure. Prefer Unix sockets (`--network host`
-or a socket bind mount) over TCP ports when the
-service is behind a reverse proxy.
-
-## Networks
-
-```bash
-docker network ls
-docker network inspect <name>
-docker network connect <net> <container>
-docker network disconnect <net> <container>
-```
+Then configure nginx/caddy to proxy to the socket.

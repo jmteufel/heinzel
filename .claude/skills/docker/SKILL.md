@@ -8,20 +8,31 @@ description: >
 
 ## Firewall Warning
 
-**Docker rewrites iptables directly and bypasses
-ufw and firewalld.** A container published with
-`-p 80:80` is reachable from the internet even
-when ufw/firewalld has that port closed.
+**Docker bypasses ufw and firewalld.** This is not
+a bug or misconfiguration — it is by design.
+
+When a port is published, Docker inserts DNAT rules
+into the iptables `nat/PREROUTING` chain. Incoming
+traffic is rewritten to the container's IP before
+the `filter/INPUT` chain is ever evaluated. ufw and
+firewalld manage the `INPUT` chain. They never see
+the traffic. A port can be closed in ufw and wide
+open to the internet via Docker simultaneously.
 
 Mitigations (choose one):
 
-- **Loopback bind** — `-p 127.0.0.1:80:80` for
-  services behind a reverse proxy. Safest default.
-- **`DOCKER-USER` chain** — iptables rules Docker
-  cannot override.
+- **Loopback bind** — `-p 127.0.0.1:80:80`. Docker
+  still creates the DNAT rule, but only for the
+  loopback interface, so external packets never
+  match it. Right default for services behind a
+  reverse proxy.
+- **`DOCKER-USER` chain** — Docker inserts this
+  chain into `filter/FORWARD` before its own rules.
+  iptables rules added here run first and can block
+  traffic Docker would otherwise allow.
 - **Disable Docker iptables** —
-  `"iptables": false` in `daemon.json`, then
-  manage routing manually.
+  `"iptables": false` in `daemon.json`. Docker
+  stops managing routing entirely; you own it.
 
 **Discuss with the user before publishing any port
 on a server that has a firewall.**

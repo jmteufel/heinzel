@@ -4,124 +4,77 @@ Use `docker compose` (v2, part of Docker Engine).
 **Do not use `docker-compose`** (v1, deprecated and
 removed from current Docker installs).
 
-## Common Commands
+## File Naming
 
-```bash
-docker compose up -d          # start detached
-docker compose down           # stop and remove
-docker compose down -v        # also remove volumes
-docker compose pull           # pull latest images
-docker compose logs -f        # follow all logs
-docker compose logs -f <svc>  # follow one service
-docker compose ps             # list services
-docker compose restart        # restart all
-docker compose restart <svc>  # restart one service
-docker compose exec <svc> sh  # shell into service
-docker compose config         # validate and dump
-docker compose top            # show processes
-```
+Name the file `compose.yaml` — it is the preferred
+canonical name in the Docker v2 specification.
+`docker-compose.yml` still works but is the legacy
+name from v1. Discovery order when both exist:
+`compose.yaml` wins.
 
-## compose.yml Conventions
+## Image Tags
 
-### Image Tags
+Always pin to explicit tags — never `latest`. It
+changes without notice and breaks reproducible
+deployments.
 
-Always pin to explicit tags — never `latest`:
+Good: `image: postgres:16.3-alpine3.20`
+Bad: `image: postgres:latest`
 
-```yaml
-services:
-  web:
-    image: nginx:1.27.3-alpine
-```
+## Restart Policy
 
-### Restart Policy
-
-```yaml
-services:
-  app:
-    restart: unless-stopped
-```
-
-Use `unless-stopped` for most services.
+Use `unless-stopped` for persistent services.
 Use `on-failure` for one-shot or init containers.
+`always` restarts even after `docker compose down`,
+which is rarely what you want.
 
-### Volumes: Named vs Bind-Mount
+## Volumes: Named vs Bind-Mount
 
-**Named volume** — data managed by Docker, survives
-`down`, portable:
+**Named volume** — managed by Docker, survives
+`docker compose down`, portable, opaque to the
+host. Good for database storage.
 
-```yaml
-services:
-  db:
-    volumes:
-      - db-data:/var/lib/postgresql/data
+**Bind mount** — host path exposed directly,
+survives anything, easy to back up and inspect
+from the host. Good for config files and data you
+own.
 
-volumes:
-  db-data:
-```
+Prefer bind mounts when you need to back up data
+from the host or inspect it without entering the
+container.
 
-**Bind mount** — host path exposed directly, easier
-to back up and inspect:
-
-```yaml
-services:
-  app:
-    volumes:
-      - ./data:/app/data
-```
-
-Prefer bind mounts for config files and data you
-need to back up or edit from the host. Use named
-volumes for opaque database storage.
-
-### Environment Variables
-
-Never put secrets directly in `compose.yml`.
-Use an `.env` file (gitignored) or a secrets
-manager:
-
-```yaml
-services:
-  app:
-    env_file: .env
-```
-
-### Port Binding
+## Port Binding
 
 Bind to loopback for services behind a reverse
-proxy:
+proxy — not `0.0.0.0`. See the firewall warning
+in the main skill: Docker bypasses ufw/firewalld,
+so `0.0.0.0` binds are reachable from the internet
+even when the firewall closes the port.
 
-```yaml
-services:
-  app:
-    ports:
-      - "127.0.0.1:3000:3000"
-```
+Good: `"127.0.0.1:3000:3000"`
+Bad: `"3000:3000"` (binds `0.0.0.0` by default)
 
-Only expose to `0.0.0.0` when the service must
-be directly reachable. See the firewall warning
-in the main skill.
+## Environment Variables
 
-### Networks
+Never put secrets directly in `compose.yaml`.
+Use an `.env` file (gitignored) with `env_file:`.
+The `.env` file is auto-loaded for variable
+substitution, but `env_file:` is required to pass
+variables into the container environment.
 
-Compose creates a default bridge network. Add
-explicit networks when services across multiple
-compose files need to communicate:
+## Networks
 
-```yaml
-networks:
-  shared:
-    external: true
-```
+Compose creates a default bridge network for each
+project. Services communicate by service name
+within that network. Add explicit named networks
+only when services across multiple compose projects
+need to reach each other.
 
-Create the network first: `docker network create shared`.
+Internal-only services that should have no outbound
+internet access: `internal: true` on the network.
 
-## Updating Services
+## Updating Images
 
-```bash
-docker compose pull           # pull new images
-docker compose up -d          # recreate if changed
-```
-
-Compose only recreates containers whose image or
-config changed. Use `--force-recreate` to restart
-all regardless.
+Pull first, then up — Compose only recreates
+containers whose image or config changed. To force
+all containers to recreate, use `--force-recreate`.
