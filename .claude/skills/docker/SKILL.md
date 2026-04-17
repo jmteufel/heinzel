@@ -64,3 +64,14 @@ Load the relevant section on demand:
   tradeoffs, vulnerability scanning, socket
   mounting risks, capabilities, rootless Docker,
   secrets, hardening checklist.
+- `references/zero-downtime-updates.md` —
+  graceful shutdown, Traefik health-based drain,
+  blue-green with compose projects, rollback.
+- `references/database-lifecycle.md` — schema
+  migration backward compatibility, major version
+  upgrades, backup schedule with profiles, PITR.
+- `references/disaster-recovery.md` — what to
+  back up, recovery runbook, RTO/RPO drills.
+- `references/log-management.md` — default
+  driver disk risk, centralized logging options,
+  non-blocking driver config.
