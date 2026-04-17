@@ -72,38 +72,82 @@ and require a restore.
 Not worth the complexity for databases under
 ~50GB where dump/restore takes minutes.
 
+## Bootstrapping
+
+When a database container starts for the first
+time against an empty volume, it needs initial
+credentials and schema. Docker's official images
+support init scripts (`/docker-entrypoint-
+initdb.d/`) and env vars (`POSTGRES_PASSWORD`,
+`MYSQL_ROOT_PASSWORD`, etc.).
+
+**Credentials:** set the root password via
+environment variable (`POSTGRES_PASSWORD`), not
+by writing it to an init file. Init files run
+only once on first start and are never re-read —
+if the password changes later, the init file is
+silently stale and misleading.
+
+**Schema:** prefer code-first migrations (run by
+your application or an init container) over SQL
+files in `initdb.d/`:
+
+- SQL init files run before your app exists and
+  cannot be versioned alongside application code.
+- Migrations run at deploy time and are tracked,
+  reversible, and testable.
+- Use `initdb.d/` only for extensions or roles
+  that must exist before the first migration.
+
 ## Backup Schedule
 
 Run `pg_dump` from a container that shares the
 database network, writing to a bind-mounted host
-directory. Activate via a Compose profile so it
-does not start with the main stack:
+directory. Use a container-native scheduler
+(e.g. supercronic) rather than a host cron job —
+the schedule lives with the stack, not on the
+host, and works regardless of host cron
+configuration.
+
+Activate via a Compose profile so it does not
+start with the main stack:
+
+For scheduled backups, run supercronic inside a
+long-lived container. The schedule lives with the
+stack — no host cron dependency:
 
 ```yaml
 services:
   backup:
-    image: postgres:16-alpine
-    command: >
-      sh -c 'pg_dump -Fc -h db -U postgres
-      mydb > /backups/$$(date +%F-%H%M).dump'
+    image: ghcr.io/aptible/supercronic
+    command: /etc/supercronic/crontab
+    configs:
+      - source: backup-cron
+        target: /etc/supercronic/crontab
     volumes:
       - /srv/backups/db:/backups
     depends_on:
       db:
         condition: service_healthy
-    profiles: [backup]
-    restart: "no"
+    restart: unless-stopped
+
+configs:
+  backup-cron:
+    content: |
+      0 2 * * * pg_dump -Fc -h db -U postgres \
+        mydb > /backups/$$(date +%F-%H%M).dump
 ```
 
-Run on demand or from a host cron job:
+For on-demand runs, use a one-shot profile
+container instead:
 
 ```bash
 docker compose --profile backup run --rm backup
 ```
 
 Suggested retention: daily backups for 7 days,
-weekly for 4 weeks. Automate deletion of old
-files in the same cron job.
+weekly for 4 weeks. Add a cleanup command to the
+crontab or a separate scheduled entry.
 
 **Backup verification is not optional.** An
 untested backup is not a backup. Restore a dump

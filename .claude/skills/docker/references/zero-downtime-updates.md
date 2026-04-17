@@ -36,6 +36,29 @@ acceptable for off-hours or low-traffic deploys.
 For production with traffic, pair it with a
 healthcheck-aware proxy.
 
+## Connection Draining
+
+Draining means: stop sending new connections to
+the old container while keeping existing
+connections open until they finish naturally.
+Without draining, in-flight requests — long
+polls, file uploads, streaming responses — are
+cut off mid-flight when the container stops.
+
+A proxy that understands draining will:
+1. Remove the old upstream from rotation (no
+   new connections accepted).
+2. Wait for active connections to complete.
+3. Only then signal the container to stop.
+
+Without a proxy, Docker has no concept of
+draining. `docker compose up` stops the old
+container immediately regardless of open
+connections — `stop_grace_period` gives the app
+time to finish in-flight work, but the proxy
+keeps sending new connections until the container
+is gone.
+
 ## With Traefik
 
 Traefik watches the Docker socket and updates
@@ -43,10 +66,12 @@ routing in real time. When a container is
 recreated:
 
 1. Old container stops → Traefik stops sending
-   it new requests.
-2. New container starts → Traefik waits until its
+   it new requests immediately.
+2. Existing connections to the old container
+   are kept open; Traefik drains them.
+3. New container starts → Traefik waits until its
    healthcheck passes before routing to it.
-3. No gap — provided a `HEALTHCHECK` is defined.
+4. No gap — provided a `HEALTHCHECK` is defined.
 
 Without a `HEALTHCHECK` in the image, Traefik
 routes to the new container immediately on start,

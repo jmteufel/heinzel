@@ -93,6 +93,38 @@ docker compose up -d
 - Spot-check data integrity against a known-good
   state (row counts, last transaction timestamp).
 
+## Filesystem Snapshots
+
+When the host filesystem supports snapshots (ZFS,
+Btrfs, LVM), they are faster and more consistent
+than the tar-via-container method and can replace
+it for volume backups.
+
+**ZFS:** `zfs snapshot tank/docker@before-deploy`
+is instantaneous and crash-consistent. Send to a
+remote pool with `zfs send | ssh host zfs recv`.
+If `data-root` is on a ZFS dataset, a single
+snapshot covers all volumes and images.
+
+**LVM:** `lvcreate --snapshot` on the logical
+volume containing Docker's data-root. Mount the
+snapshot read-only and run the tar procedure from
+`references/operations.md` against the mounted
+copy rather than the live volume.
+
+**Btrfs:** `btrfs subvolume snapshot` is
+copy-on-write and near-instant. Works well when
+each named volume is a subvolume.
+
+Regardless of method: stop the database before
+snapshotting unless it supports crash-consistent
+hot backup. A filesystem snapshot taken while a
+database is mid-write produces a consistent image
+at the block level, but the database may need
+recovery on mount (like after a power failure).
+For PostgreSQL this is safe; for some others it
+is not — check the database documentation.
+
 ## Recovery Drills
 
 Run a complete recovery drill on a staging server
