@@ -24,23 +24,26 @@ Bind mounts (`./data:/app/data`) sit directly on
 the host filesystem — back them up like any other
 directory.
 
-## Prune Caution
+## Prune and `down -v` Caution
 
-`docker system prune` and `docker volume prune`
-are destructive and non-reversible. Key behavior
-to know before running:
+All of these are irreversible — there is no undo.
 
-- `docker volume prune` removes **all** volumes
-  not currently mounted by a running container —
-  including volumes for stopped or `down` Compose
-  stacks that you intend to restart.
-- `docker system prune -af` removes unused images
-  too — including ones you deliberately pulled but
-  haven't started yet.
+`docker compose down -v` removes all named volumes
+defined in or used by the compose project. It is
+easy to run by habit when `down` is the intent.
+Back up volume data before running it.
 
-Back up volume data before pruning. Use
-`docker volume ls` and `docker system df -v` to
-understand what will be removed.
+`docker volume prune` removes **all** volumes not
+currently mounted by a running container — including
+volumes for stopped or `down` stacks you intend to
+restart.
+
+`docker system prune -af` removes unused images
+too — including ones you deliberately pulled but
+haven't started yet.
+
+Use `docker volume ls` and `docker system df -v`
+to understand what will be removed before pruning.
 
 ## Port Conflicts
 
@@ -58,3 +61,8 @@ volumes:
 ```
 
 Then configure nginx/caddy to proxy to the socket.
+
+## Debugging
+
+For containers that exit immediately or fail at
+startup, see `references/debugging.md`.

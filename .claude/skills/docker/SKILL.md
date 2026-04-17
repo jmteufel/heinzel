@@ -48,8 +48,11 @@ Load the relevant section on demand:
 - `references/compose.md` — Docker Compose v2
   conventions, depends_on readiness, resource
   limits, env var mechanisms.
-- `references/operations.md` — container lifecycle,
-  logs, exec, volumes, port conflicts.
+- `references/operations.md` — volumes, prune/
+  down -v caution, port conflicts.
+- `references/debugging.md` — containers that
+  exit immediately, entrypoint override, OOM
+  diagnosis, compose-specific debugging.
 - `references/network-namespace.md` — VPN/proxy
   sidecar pattern, shared network namespaces.
 - `references/images.md` — image management,

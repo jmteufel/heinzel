@@ -25,6 +25,30 @@ context. Even if those files aren't copied into
 the image, they transit the socket and inflate
 build times.
 
+A minimal starting point (adapt per stack):
+
+```
+.git
+.env
+*.log
+node_modules
+__pycache__
+*.pyc
+.pytest_cache
+dist
+.DS_Store
+```
+
+Rules are evaluated top-to-bottom. Use `!` to
+re-include a path excluded by an earlier pattern:
+
+```
+# Exclude all .md files
+*.md
+# But keep the license
+!LICENSE.md
+```
+
 ## Dockerfile Best Practices
 
 ### Base Image
@@ -141,6 +165,24 @@ Common patterns:
 - Node SPA: `node` builder → `nginx:alpine`
 - Python: full image for pip → `python:slim` for
   runtime
+
+### Multi-Arch Builds
+
+Build for multiple architectures when the target
+server may be ARM (AWS Graviton, OVH ARM, Apple
+Silicon via Colima). Use `docker buildx`:
+
+```bash
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t myimage:tag \
+  --push .
+```
+
+`--push` is required for multi-arch — local load
+only supports a single platform. Push to a registry
+and pull on the target host. The correct variant
+is selected automatically at pull time.
 
 ### Secrets at Build Time
 

@@ -191,6 +191,36 @@ reach each other freely.
 For backend services with no outbound internet
 requirement, set `internal: true` on the network.
 
+## Vulnerability Scanning
+
+Scan images before deploying to production and
+when updating base images or dependencies.
+
+**`docker scout`** — built into the Docker CLI,
+integrated with Docker Hub:
+
+```bash
+docker scout cves <image>:<tag>
+docker scout recommendations <image>:<tag>
+```
+
+**`trivy`** — more comprehensive, works with any
+registry, can scan offline, covers OS packages
+and language dependencies:
+
+```bash
+trivy image <image>:<tag>
+```
+
+Trivy is the better choice for CI pipelines and
+for images from private registries. Scout is
+convenient for quick checks during development.
+
+Neither tool is a substitute for keeping base
+images up to date — a freshly built image from
+a current base will have far fewer findings than
+one built six months ago.
+
 ## Security Hardening Checklist
 
 - [ ] Non-root `USER` in Dockerfile (owned images)
@@ -204,6 +234,8 @@ requirement, set `internal: true` on the network.
 - [ ] Docker socket not mounted without approval
 - [ ] `read_only: true` + tmpfs for writable paths
 - [ ] No secrets in env vars or image layers
+- [ ] Image scanned for vulnerabilities before
+      deployment
 - [ ] Separate networks for unrelated services
 - [ ] Firewall: loopback-bind published ports
       (see main skill)

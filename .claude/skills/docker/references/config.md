@@ -9,6 +9,31 @@ systemctl reload docker
 systemctl restart docker
 ```
 
+## Data Root
+
+By default Docker stores everything — images,
+containers, volumes, logs — under
+`/var/lib/docker`. On most servers this is the
+root partition. A single large image pull or a
+container writing unbounded logs will fill it,
+making the whole server unstable.
+
+Set `data-root` to a dedicated partition or volume
+before first use. Changing it after containers
+exist requires migrating data manually:
+
+```json
+{
+  "data-root": "/mnt/docker"
+}
+```
+
+The directory must exist and be owned by root
+before starting the daemon. If changing on an
+existing installation: stop Docker, move
+`/var/lib/docker` to the new location, update
+`daemon.json`, start Docker.
+
 ## Recommended Defaults
 
 Set these on every server, ideally before any
