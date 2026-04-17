@@ -42,7 +42,9 @@ on a server that has a firewall.**
 Load the relevant section on demand:
 
 - `references/installation.md` — installing Docker
-  from official repos per distro, daemon.json.
+  from official repos per distro.
+- `references/config.md` — daemon.json defaults,
+  logging, security-relevant daemon options.
 - `references/compose.md` — Docker Compose v2
   conventions, depends_on readiness, resource
   limits, env var mechanisms.
