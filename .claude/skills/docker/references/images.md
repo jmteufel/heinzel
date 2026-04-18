@@ -143,6 +143,10 @@ image and cannot rely on the runtime setting.
 Use `init: true` in compose.yaml when you control
 the deployment but not necessarily the image.
 
+Scheduler containers (crond, supercronic) have
+their own PID 1 considerations — see
+`references/scheduling-in-containers.md`.
+
 ### Multi-Stage Builds
 
 Keep build tooling out of the final image. Copy

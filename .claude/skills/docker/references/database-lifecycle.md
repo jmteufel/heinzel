@@ -105,6 +105,10 @@ Run `pg_dump` from a long-lived container that
 shares the database network. Keep the schedule
 inside the stack — no host cron dependency.
 
+For the tradeoffs between busybox crond and
+supercronic, see
+`references/scheduling-in-containers.md`.
+
 `postgres:XX-alpine` already contains both
 `pg_dump` and busybox `crond`. No custom image
 is needed:

@@ -75,3 +75,6 @@ Load the relevant section on demand:
 - `references/log-management.md` — default
   driver disk risk, centralized logging options,
   non-blocking driver config.
+- `references/scheduling-in-containers.md` —
+  busybox crond vs supercronic, PID 1 and zombie
+  reaping, tini pairing.
